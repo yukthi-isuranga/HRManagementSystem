@@ -21,6 +21,7 @@
                 return age;
             }
         }
+        public List<string> Departments { get; set; } = new List<string>();
     }
 }
 

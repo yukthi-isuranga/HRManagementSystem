@@ -14,16 +14,54 @@ public class EmployeesController : ControllerBase
         _connection = config.GetConnectionString("DefaultConnection");
     }
 
+    //[HttpGet]
+    //public async Task<IActionResult> Get()
+    //{
+    //    using var db = new SqlConnection(_connection);
+
+    //    var sql = "SELECT * FROM Employees";
+
+    //    var data = await db.QueryAsync<Employee>(sql);
+
+    //    return Ok(data);
+    //}
     [HttpGet]
     public async Task<IActionResult> Get()
     {
         using var db = new SqlConnection(_connection);
 
-        var sql = "SELECT * FROM Employees";
+        var sql = @"
+        SELECT e.Id, e.FirstName, e.LastName, e.Email, e.DateOfBirth, e.Salary,
+               d.DepartmentName
+        FROM Employees e
+        LEFT JOIN EmployeeDepartments ed ON e.Id = ed.EmployeeId
+        LEFT JOIN Departments d ON ed.DepartmentId = d.Id
+    ";
 
-        var data = await db.QueryAsync<Employee>(sql);
+        var employeeDict = new Dictionary<int, Employee>();
 
-        return Ok(data);
+        var result = await db.QueryAsync<Employee, string, Employee>(
+            sql,
+            (emp, deptName) =>
+            {
+                if (!employeeDict.TryGetValue(emp.Id, out var existing))
+                {
+                    existing = emp;
+                    existing.Departments = new List<string>();
+                    employeeDict.Add(existing.Id, existing);
+                }
+
+                if (!string.IsNullOrEmpty(deptName))
+                {
+                    existing.Departments.Add(deptName);
+                }
+
+                return existing;
+            },
+            splitOn: "DepartmentName"
+        );
+
+        return Ok(employeeDict.Values);
     }
 
     [HttpPost]
@@ -77,5 +115,27 @@ public class EmployeesController : ControllerBase
         await db.ExecuteAsync(sql, new { Id = id });
 
         return Ok(new { message = "Employee deleted successfully" });
+    }
+
+
+    [HttpPost("assign-departments")]
+    public async Task<IActionResult> AssignDepartments(EmployeeDepartmentDto dto)
+    {
+        using var db = new SqlConnection(_connection);
+
+        // Remove existing mappings
+        await db.ExecuteAsync(
+            "DELETE FROM EmployeeDepartments WHERE EmployeeId = @EmployeeId",
+            new { dto.EmployeeId });
+
+        // Insert new mappings
+        foreach (var deptId in dto.DepartmentIds)
+        {
+            await db.ExecuteAsync(
+                "INSERT INTO EmployeeDepartments (EmployeeId, DepartmentId) VALUES (@EmployeeId, @DepartmentId)",
+                new { dto.EmployeeId, DepartmentId = deptId });
+        }
+
+        return Ok(new { message = "Departments assigned successfully" });
     }
 }
