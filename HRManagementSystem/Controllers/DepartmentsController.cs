@@ -37,4 +37,37 @@ public class DepartmentsController : ControllerBase
 
         return Ok(new { message = "Department created successfully" });
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] Department dept)
+    {
+        using var db = new SqlConnection(_connection);
+
+        var sql = @"UPDATE Departments 
+                SET DepartmentCode = @DepartmentCode,
+                    DepartmentName = @DepartmentName
+                WHERE Id = @Id";
+
+        await db.ExecuteAsync(sql, new
+        {
+            dept.DepartmentCode,
+            dept.DepartmentName,
+            Id = id
+        });
+
+        return Ok(new { message = "Department updated successfully" });
+    }
+
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        using var db = new SqlConnection(_connection);
+
+        var sql = "DELETE FROM Departments WHERE Id = @Id";
+
+        await db.ExecuteAsync(sql, new { Id = id });
+
+        return Ok(new { message = "Department deleted successfully" });
+    }
 }
