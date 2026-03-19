@@ -67,17 +67,37 @@ public class EmployeesController : ControllerBase
         return Ok(employeeDict.Values);
     }
 
+    //[HttpPost]
+    //public async Task<IActionResult> Create([FromBody] Employee emp)
+    //{
+    //    using var db = new SqlConnection(_connection);
+
+    //    var sql = @"INSERT INTO Employees 
+    //            (FirstName, LastName, Email, DateOfBirth, Salary)
+    //            VALUES 
+    //            (@FirstName, @LastName, @Email, @DateOfBirth, @Salary)";
+
+    //    await db.ExecuteAsync(sql, emp);
+
+    //    return Ok(new { message = "Employee created successfully" });
+    //}
+
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Employee emp)
+    public async Task<IActionResult> Create([FromBody] EmployeeCreateDto empDto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         using var db = new SqlConnection(_connection);
 
-        var sql = @"INSERT INTO Employees 
-                (FirstName, LastName, Email, DateOfBirth, Salary)
-                VALUES 
-                (@FirstName, @LastName, @Email, @DateOfBirth, @Salary)";
+        var departments = string.Join(",", empDto.Departments);
 
-        await db.ExecuteAsync(sql, emp);
+        var sql = @"INSERT INTO Employees 
+            (FirstName, LastName, Email, DateOfBirth, Salary)
+            VALUES 
+            (@FirstName, @LastName, @Email, @DateOfBirth, @Salary)";
+
+        await db.ExecuteAsync(sql, empDto);
 
         return Ok(new { message = "Employee created successfully" });
     }
