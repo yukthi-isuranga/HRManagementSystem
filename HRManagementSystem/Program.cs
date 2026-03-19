@@ -11,6 +11,8 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddMemoryCache();     // MemoryCache
+
 // JWT Configuration
 var key = "THIS_IS_MY_SUPER_SECRET_KEY_1234567890";
 
