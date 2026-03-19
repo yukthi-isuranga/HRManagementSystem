@@ -33,38 +33,74 @@ public class EmployeesController : ControllerBase
     {
         using var db = new SqlConnection(_connection);
 
+    //    var sql = @"
+    //    SELECT e.Id, e.FirstName, e.LastName, e.Email, e.DateOfBirth, e.Salary,
+    //           d.DepartmentName
+    //    FROM Employees e
+    //    LEFT JOIN EmployeeDepartments ed ON e.Id = ed.EmployeeId
+    //    LEFT JOIN Departments d ON ed.DepartmentId = d.Id
+    //";
+
+    //    var employeeDict = new Dictionary<int, Employee>();
+
+    //    var result = await db.QueryAsync<Employee, string, Employee>(
+    //        sql,
+    //        (emp, deptName) =>
+    //        {
+    //            if (!employeeDict.TryGetValue(emp.Id, out var existing))
+    //            {
+    //                existing = emp;
+    //                existing.Departments = new List<string>();
+    //                employeeDict.Add(existing.Id, existing);
+    //            }
+
+    //            if (!string.IsNullOrEmpty(deptName))
+    //            {
+    //                existing.Departments.Add(deptName);
+    //            }
+
+    //            return existing;
+    //        },
+    //        splitOn: "DepartmentName"
+    //    );
+
+    //    return Ok(employeeDict.Values);
+
         var sql = @"
-        SELECT e.Id, e.FirstName, e.LastName, e.Email, e.DateOfBirth, e.Salary,
-               d.DepartmentName
-        FROM Employees e
-        LEFT JOIN EmployeeDepartments ed ON e.Id = ed.EmployeeId
-        LEFT JOIN Departments d ON ed.DepartmentId = d.Id
-    ";
+    SELECT e.Id, e.FirstName, e.LastName, e.Email, e.DateOfBirth, e.Salary,
+           d.Id AS DeptId, d.DepartmentName
+    FROM Employees e
+    LEFT JOIN EmployeeDepartments ed ON e.Id = ed.EmployeeId
+    LEFT JOIN Departments d ON ed.DepartmentId = d.Id
+    ORDER BY e.Id
+";
 
-        var employeeDict = new Dictionary<int, Employee>();
+var lookup = new Dictionary<int, Employee>();
 
-        var result = await db.QueryAsync<Employee, string, Employee>(
-            sql,
-            (emp, deptName) =>
-            {
-                if (!employeeDict.TryGetValue(emp.Id, out var existing))
-                {
-                    existing = emp;
-                    existing.Departments = new List<string>();
-                    employeeDict.Add(existing.Id, existing);
-                }
+var rows = await db.QueryAsync(sql);
 
-                if (!string.IsNullOrEmpty(deptName))
-                {
-                    existing.Departments.Add(deptName);
-                }
+foreach (var row in rows)
+{
+    int empId = row.Id;
+    if (!lookup.ContainsKey(empId))
+    {
+        lookup[empId] = new Employee
+        {
+            Id = empId,
+            FirstName = row.FirstName,
+            LastName = row.LastName,
+            Email = row.Email,
+            DateOfBirth = row.DateOfBirth,
+            Salary = row.Salary,
+            Departments = new List<string>()
+        };
+    }
 
-                return existing;
-            },
-            splitOn: "DepartmentName"
-        );
+    if (row.DepartmentName != null)
+        lookup[empId].Departments.Add(row.DepartmentName);
+}
 
-        return Ok(employeeDict.Values);
+return Ok(lookup.Values);
     }
 
     //[HttpPost]
@@ -90,14 +126,35 @@ public class EmployeesController : ControllerBase
 
         using var db = new SqlConnection(_connection);
 
-        var departments = string.Join(",", empDto.Departments);
+        // Step 1: Insert Employee and get ID
+        //    var employeeId = await db.ExecuteScalarAsync<int>(@"
+        //    INSERT INTO Employees (FirstName, LastName, Email, DateOfBirth, Salary)
+        //    VALUES (@FirstName, @LastName, @Email, @DateOfBirth, @Salary);
+        //    SELECT CAST(SCOPE_IDENTITY() as int);
+        //", empDto);
+        var employeeId = await db.ExecuteScalarAsync<int>(
+        "sp_CreateEmployee",
+        new
+        {
+            empDto.FirstName,
+            empDto.LastName,
+            empDto.Email,
+            empDto.DateOfBirth,
+            empDto.Salary
+        },
+        commandType: System.Data.CommandType.StoredProcedure
+    );
 
-        var sql = @"INSERT INTO Employees 
-            (FirstName, LastName, Email, DateOfBirth, Salary)
-            VALUES 
-            (@FirstName, @LastName, @Email, @DateOfBirth, @Salary)";
-
-        await db.ExecuteAsync(sql, empDto);
+        // Step 2: Insert into EmployeeDepartments
+        foreach (var deptId in empDto.DepartmentIds)
+        {
+            await db.ExecuteAsync(
+            "sp_AssignEmployeeDepartments",
+            new { EmployeeId = employeeId, DepartmentId = deptId },
+            commandType: System.Data.CommandType.StoredProcedure
+        );
+            Console.WriteLine($"Departments Count: {empDto.DepartmentIds.Count}");
+        }
 
         return Ok(new { message = "Employee created successfully" });
     }

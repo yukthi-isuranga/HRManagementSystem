@@ -4,7 +4,6 @@ namespace HRManagementSystem.Models
 {
     public class Employee
     {
-        internal string DepartmentsString;
 
         public int Id { get; set; }
         [Required(ErrorMessage = "First Name is required")]
@@ -18,20 +17,20 @@ namespace HRManagementSystem.Models
         public DateTime DateOfBirth { get; set; }
         [Required(ErrorMessage = "Salary is required")]
         public decimal Salary { get; set; }
-        //public int Age
-        //{
-        //    get
-        //    {
-        //        var today = DateTime.Today;
-        //        var age = today.Year - DateOfBirth.Year;
+        public int Age
+        {
+            get
+            {
+                var today = DateTime.Today;
+                var age = today.Year - DateOfBirth.Year;
 
-        //        if (DateOfBirth.Date > today.AddYears(-age))
-        //            age--;
+                if (DateOfBirth.Date > today.AddYears(-age))
+                    age--;
 
-        //        return age;
-        //    }
-        //}
-        public int Age => DateTime.Now.Year - DateOfBirth.Year;
+                return age;
+            }
+        }
+        //public int Age => DateTime.Now.Year - DateOfBirth.Year;
         public List<string> Departments { get; set; } = new List<string>();
     }
 }

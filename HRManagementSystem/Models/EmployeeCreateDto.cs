@@ -21,5 +21,6 @@ public class EmployeeCreateDto
     public decimal Salary { get; set; }
 
     // List of department names
-    public List<string> Departments { get; set; } = new List<string>();
+    // ✅ FIX: Use Department IDs
+    public List<int> DepartmentIds { get; set; } = new List<int>();
 }
