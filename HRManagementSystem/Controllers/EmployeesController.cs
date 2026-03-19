@@ -1,8 +1,10 @@
 ﻿using Dapper;
 using HRManagementSystem.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
+[Authorize(Roles = "Admin,HR")]
 [ApiController]
 [Route("api/[controller]")]
 public class EmployeesController : ControllerBase
@@ -26,6 +28,7 @@ public class EmployeesController : ControllerBase
     //    return Ok(data);
     //}
     [HttpGet]
+    [Authorize(Roles = "Admin,HR,User")]                //Allow Read for All Roles
     public async Task<IActionResult> Get()
     {
         using var db = new SqlConnection(_connection);

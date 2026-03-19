@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Dapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Dapper;
 
+[Authorize(Roles = "Admin,HR")]
 [ApiController]
 [Route("api/[controller]")]
 public class DepartmentsController : ControllerBase
