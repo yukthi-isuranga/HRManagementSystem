@@ -16,22 +16,54 @@ public class AuthController : ControllerBase
         if (login.Username == "admin" && login.Password == "123")
         {
             var token = GenerateToken("Admin");
-            return Ok(new { token });
+            //return Ok(new { token });
+            // Set HTTP-only cookie
+            Response.Cookies.Append("jwtToken", token, new CookieOptions
+            {
+                HttpOnly = true,        // JavaScript cannot access
+                Secure = true,          // only sent over HTTPS
+                SameSite = SameSiteMode.Strict, // adjust for your frontend domain
+                Expires = DateTimeOffset.UtcNow.AddHours(1)
+            });
+            return Ok(new { message = "ADMIN Login successful" , role = "ADMIN" , token });
         }
 
         if (login.Username == "hr" && login.Password == "123")
         {
             var token = GenerateToken("HR");
-            return Ok(new { token });
+            //return Ok(new { token });
+            Response.Cookies.Append("jwtToken", token, new CookieOptions
+            {
+                HttpOnly = true,        // JavaScript cannot access
+                Secure = true,          // only sent over HTTPS
+                SameSite = SameSiteMode.None, // adjust for your frontend domain
+                Expires = DateTimeOffset.UtcNow.AddHours(1)
+            });
+            return Ok(new { message = "HR Login successful", role = "HR", token });
         }
 
         if (login.Username == "user" && login.Password == "123")
         {
             var token = GenerateToken("User");
-            return Ok(new { token });
+            //return Ok(new { token });
+            Response.Cookies.Append("jwtToken", token, new CookieOptions
+            {
+                HttpOnly = true,        // JavaScript cannot access
+                Secure = true,          // only sent over HTTPS
+                SameSite = SameSiteMode.Strict, // adjust for your frontend domain
+                Expires = DateTimeOffset.UtcNow.AddHours(1)
+            });
+            return Ok(new { message = "USER Login successful", role = "USER", token });
         }
 
         return Unauthorized();
+    }
+
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        Response.Cookies.Delete("jwtToken");
+        return Ok(new { message = "Logged out successfully" });
     }
 
     private string GenerateToken(string role)

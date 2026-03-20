@@ -159,11 +159,38 @@ return Ok(lookup.Values);
         return Ok(new { message = "Employee created successfully" });
     }
 
+    //[HttpPut("{id}")]
+    //public async Task<IActionResult> Update(int id, [FromBody] Employee emp)
+    //{
+    //    using var db = new SqlConnection(_connection);
+
+    //    var sql = @"UPDATE Employees 
+    //            SET FirstName = @FirstName,
+    //                LastName = @LastName,
+    //                Email = @Email,
+    //                DateOfBirth = @DateOfBirth,
+    //                Salary = @Salary
+    //            WHERE Id = @Id";
+
+    //    await db.ExecuteAsync(sql, new
+    //    {
+    //        emp.FirstName,
+    //        emp.LastName,
+    //        emp.Email,
+    //        emp.DateOfBirth,
+    //        emp.Salary,
+    //        Id = id
+    //    });
+
+    //    return Ok(new { message = "Employee updated successfully" });
+    //}
+
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] Employee emp)
+    public async Task<IActionResult> Update(int id, [FromBody] EmployeeCreateDto empDto)
     {
         using var db = new SqlConnection(_connection);
 
+        // Step 1: Update Employee
         var sql = @"UPDATE Employees 
                 SET FirstName = @FirstName,
                     LastName = @LastName,
@@ -174,13 +201,29 @@ return Ok(lookup.Values);
 
         await db.ExecuteAsync(sql, new
         {
-            emp.FirstName,
-            emp.LastName,
-            emp.Email,
-            emp.DateOfBirth,
-            emp.Salary,
+            empDto.FirstName,
+            empDto.LastName,
+            empDto.Email,
+            empDto.DateOfBirth,
+            empDto.Salary,
             Id = id
         });
+
+        // Step 2: Remove existing departments
+        await db.ExecuteAsync(
+            "DELETE FROM EmployeeDepartments WHERE EmployeeId = @EmployeeId",
+            new { EmployeeId = id }
+        );
+
+        // Step 3: Insert new departments
+        foreach (var deptId in empDto.DepartmentIds)
+        {
+            await db.ExecuteAsync(
+                "sp_AssignEmployeeDepartments",
+                new { EmployeeId = id, DepartmentId = deptId },
+                commandType: System.Data.CommandType.StoredProcedure
+            );
+        }
 
         return Ok(new { message = "Employee updated successfully" });
     }
