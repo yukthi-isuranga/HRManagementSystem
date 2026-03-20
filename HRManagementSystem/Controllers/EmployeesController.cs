@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
-[Authorize(Roles = "Admin,HR")]
+[Authorize(Roles = "Admin,HR,User")]
 [ApiController]
 [Route("api/[controller]")]
 public class EmployeesController : ControllerBase
@@ -119,6 +119,7 @@ return Ok(lookup.Values);
     //}
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<IActionResult> Create([FromBody] EmployeeCreateDto empDto)
     {
         if (!ModelState.IsValid)
@@ -186,6 +187,7 @@ return Ok(lookup.Values);
     //}
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<IActionResult> Update(int id, [FromBody] EmployeeCreateDto empDto)
     {
         using var db = new SqlConnection(_connection);
@@ -229,6 +231,7 @@ return Ok(lookup.Values);
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         using var db = new SqlConnection(_connection);
@@ -242,6 +245,7 @@ return Ok(lookup.Values);
 
 
     [HttpPost("assign-departments")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<IActionResult> AssignDepartments(EmployeeDepartmentDto dto)
     {
         using var db = new SqlConnection(_connection);

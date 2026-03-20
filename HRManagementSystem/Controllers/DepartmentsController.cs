@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Caching.Memory;
 
-[Authorize(Roles = "Admin,HR")]
+[Authorize(Roles = "Admin,HR,User")]
 [ApiController]
 [Route("api/[controller]")]
 public class DepartmentsController : ControllerBase
@@ -31,6 +31,7 @@ public class DepartmentsController : ControllerBase
     //    return Ok(data);
     //}
     [HttpGet]
+    [Authorize(Roles = "Admin,HR,User")]
     public async Task<IActionResult> Get()
     {
         // Try to get cached departments
@@ -54,6 +55,7 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<IActionResult> Create([FromBody] Department dept)
     {
         if (!ModelState.IsValid)
@@ -72,6 +74,7 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<IActionResult> Update(int id, [FromBody] Department dept)
     {
         using var db = new SqlConnection(_connection);
@@ -95,6 +98,7 @@ public class DepartmentsController : ControllerBase
 
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         using var db = new SqlConnection(_connection);
